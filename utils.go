@@ -20,7 +20,7 @@ func handleClient(conn net.Conn, ifce *water.Interface) {
 
 // transfer data between two interfaces (TUN or TCP)
 func transfer(dst io.Writer, src io.Reader) {
-	buf := make([]byte, 1100)
+	buf := make([]byte, 1000)
 	for {
 		n, err := src.Read(buf)
 		if err != nil {

@@ -73,7 +73,8 @@ func main() {
 
 			// Handle each client connection in a new goroutine
 			go func() {
-				go transfer(conn, ifce)
+				defer conn.Close()
+				transfer(conn, ifce)
 				transfer(ifce, conn)
 			}()
 		}

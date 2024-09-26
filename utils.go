@@ -3,39 +3,27 @@ package main
 import (
 	"io"
 	"log"
-	"net"
 
-	"github.com/songgao/water"
 	"github.com/vishvananda/netlink"
 )
 
-// handleClient handles bidirectional communication between the server and the client
-func handleClient(conn net.Conn, ifce *water.Interface) {
-	defer conn.Close()
-
-	// Transfer data between the TUN interface and the client
-	go transfer(ifce, conn)
-	transfer(conn, ifce)
-}
-
 // transfer data between two interfaces (TUN or TCP)
-func transfer(dst io.Writer, src io.Reader) {
-	buf := make([]byte, 1000)
+func transfer(src io.Reader, dst io.Writer) {
+	buf := make([]byte, 1024) // Larger buffer
 	for {
 		n, err := src.Read(buf)
 		if err != nil {
-			if err == io.EOF {
-				log.Println("Connection closed")
-				break
-			}
-			log.Println("Read error:", err)
+			log.Printf("Read error: %v", err)
 			return
 		}
+		log.Printf("Read %d bytes", n)
+
 		_, err = dst.Write(buf[:n])
 		if err != nil {
-			log.Println("Write error:", err)
+			log.Printf("Write error: %v", err)
 			return
 		}
+		log.Printf("Wrote %d bytes", n)
 	}
 }
 

@@ -54,8 +54,8 @@ func main() {
 		log.Println("Connected to server")
 
 		// Handle bidirectional communication
-		go transfer(conn, ifce)
-		transfer(ifce, conn)
+		go transfer(ifce, conn)
+		transfer(conn, ifce)
 
 	} else {
 		// Accept client connections in a loop
@@ -74,7 +74,10 @@ func main() {
 			log.Println("Client connected")
 
 			// Handle each client connection in a new goroutine
-			go handleClient(conn, ifce)
+			go func() {
+				go transfer(conn, ifce)
+				transfer(ifce, conn)
+			}()
 		}
 	}
 

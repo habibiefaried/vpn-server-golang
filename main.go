@@ -56,6 +56,7 @@ func main() {
 		// Handle bidirectional communication
 		go transfer(conn, ifce)
 		transfer(ifce, conn)
+
 	} else {
 		// Accept client connections in a loop
 		listener, err := net.Listen("tcp", fmt.Sprintf("%v:%v", *host, *port))

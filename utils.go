@@ -14,13 +14,13 @@ func handleClient(conn net.Conn, ifce *water.Interface) {
 	defer conn.Close()
 
 	// Transfer data between the TUN interface and the client
-	go transfer(conn, ifce)
-	transfer(ifce, conn)
+	go transfer(ifce, conn)
+	transfer(conn, ifce)
 }
 
 // transfer data between two interfaces (TUN or TCP)
 func transfer(dst io.Writer, src io.Reader) {
-	buf := make([]byte, 1300)
+	buf := make([]byte, 1200)
 	for {
 		n, err := src.Read(buf)
 		if err != nil {
@@ -44,6 +44,11 @@ func setupInterface(ifaceName string, ipCIDR string) error {
 	// Find the link for the TUN interface
 	link, err := netlink.LinkByName(ifaceName)
 	if err != nil {
+		return err
+	}
+
+	// Set the MTU of the TUN interface
+	if err := netlink.LinkSetMTU(link, 1300); err != nil {
 		return err
 	}
 

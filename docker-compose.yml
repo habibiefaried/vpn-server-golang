@@ -1,0 +1,32 @@
+version: '3.1'
+
+services:
+  vpnserver:
+    container_name: vpnserver
+    privileged: true
+    command: ["-c", "(cd __test__ && php -S 0.0.0.0:80 &) && ./vpn --isclient=false --netip=192.168.45.1/24"]
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.test
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.101
+
+  vpnclient:
+    container_name: vpnclient
+    privileged: true
+    command: ["-c", "(cd __test__ && php -S 0.0.0.0:80 &) && ./vpn --host=10.5.0.101 --netip=192.168.45.2/24"]
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.test
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.102
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/24
+         gateway: 10.5.0.1

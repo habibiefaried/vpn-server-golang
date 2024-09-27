@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	MTU = 1300
+)
+
 func main() {
 	var host *string = pflag.String("host", "0.0.0.0", "Which host/IP this VPN is using")
 	var port *string = pflag.String("port", "10443", "Which port this VPN is using")
@@ -26,7 +30,7 @@ func main() {
 	}
 	log.Printf("Interface allocated: %s\n", ifce.Name())
 
-	runIP("link", "set", "dev", ifce.Name(), "mtu", "1300")
+	runIP("link", "set", "dev", ifce.Name(), "mtu", fmt.Sprintf("%v", MTU))
 	runIP("addr", "add", *netIp, "dev", ifce.Name())
 	runIP("link", "set", "dev", ifce.Name(), "up")
 
@@ -52,8 +56,8 @@ func main() {
 		log.Println("Connected to server")
 
 		// Handle bidirectional communication
-		go transfer(ifce, conn)
-		transfer(conn, ifce)
+		go ReadIfaceAndSendTCP(ifce, conn)
+		RecvTCPAndWriteIface(conn, ifce)
 
 	} else {
 		// Accept client connections in a loop
@@ -74,8 +78,8 @@ func main() {
 			// Handle each client connection in a new goroutine
 			go func() {
 				defer conn.Close()
-				go transfer(conn, ifce)
-				transfer(ifce, conn)
+				go RecvTCPAndWriteIface(conn, ifce)
+				ReadIfaceAndSendTCP(ifce, conn)
 			}()
 		}
 	}

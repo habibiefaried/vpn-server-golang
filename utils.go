@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os/exec"
@@ -35,6 +36,12 @@ func RecvTCPAndWriteIface(conn net.Conn, ifce *water.Interface) {
 	for {
 		n, err := conn.Read(response)
 		if err != nil {
+			if err == io.EOF {
+				fmt.Println("Client disconnected")
+				conn.Close()
+				break
+			}
+
 			log.Printf("Error reading from TCP server: %v", err)
 			n = 0
 		}

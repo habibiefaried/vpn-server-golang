@@ -26,11 +26,9 @@ func main() {
 	}
 	log.Printf("Interface allocated: %s\n", ifce.Name())
 
-	// Setup the TUN interface using netlink
-	err = setupInterface(ifce.Name(), *netIp)
-	if err != nil {
-		log.Fatalf("Failed to set up interface with IP %v: %v", *netIp, err)
-	}
+	runIP("link", "set", "dev", ifce.Name(), "mtu", "1300")
+	runIP("addr", "add", *netIp, "dev", ifce.Name())
+	runIP("link", "set", "dev", ifce.Name(), "up")
 
 	if *isProxyTypeClient {
 		// Connect to the VPN server

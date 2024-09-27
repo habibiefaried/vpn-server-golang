@@ -1,0 +1,5 @@
+FROM golang:1.23-bullseye
+
+RUN apt update && apt install net-tools nano curl iproute2 iputils-ping traceroute php-cli -y
+
+# docker build . -f Dockerfile.master -t vpn-server-golang-base

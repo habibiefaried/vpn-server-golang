@@ -1,8 +1,8 @@
-FROM golang:1.23-bullseye
+FROM vpn-server-golang-base:latest
 
 COPY . /workdir
 WORKDIR /workdir
 
-RUN apt update && apt install net-tools nano curl iproute2 iputils-ping traceroute php-cli -y && go build -o vpn
+RUN go build -o vpn
 
 ENTRYPOINT ["/bin/bash"]

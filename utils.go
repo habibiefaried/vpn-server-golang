@@ -14,7 +14,8 @@ func ReadIfaceAndSendTCP(ifce *water.Interface, conn net.Conn) {
 	for {
 		n, err := ifce.Read(packet)
 		if err != nil {
-			log.Fatalf("Error reading from TUN interface: %v", err)
+			log.Printf("Error reading from TUN interface: %v", err)
+			n = 0
 		}
 
 		fmt.Printf("Read %d bytes from TUN interface\n", n)
@@ -23,7 +24,7 @@ func ReadIfaceAndSendTCP(ifce *water.Interface, conn net.Conn) {
 			// Send the data to the TCP server
 			_, err = conn.Write(packet[:n])
 			if err != nil {
-				log.Fatalf("Error sending packet to TCP server: %v", err)
+				log.Printf("Error sending packet to TCP server: %v", err)
 			}
 		}
 	}
@@ -34,7 +35,8 @@ func RecvTCPAndWriteIface(conn net.Conn, ifce *water.Interface) {
 	for {
 		n, err := conn.Read(response)
 		if err != nil {
-			log.Fatalf("Error reading from TCP server: %v", err)
+			log.Printf("Error reading from TCP server: %v", err)
+			n = 0
 		}
 
 		fmt.Printf("Received %d bytes from TCP server\n", n)
@@ -43,7 +45,7 @@ func RecvTCPAndWriteIface(conn net.Conn, ifce *water.Interface) {
 			// Write the response back to the TUN interface
 			_, err = ifce.Write(response[:n])
 			if err != nil {
-				log.Fatalf("Error writing to TUN interface: %v", err)
+				log.Printf("Error writing to TUN interface: %v", err)
 			}
 		}
 	}

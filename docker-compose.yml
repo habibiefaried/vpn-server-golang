@@ -23,16 +23,16 @@ services:
       vpcbr:
         ipv4_address: 10.5.0.102
 
-  # vpnclient2:
-  #   container_name: vpnclient2
-  #   privileged: true
-  #   command: ["-c", "(cd __test__ && php -S 0.0.0.0:80 &) && ./vpn --host=10.5.0.101 --netip=192.168.45.3/24"]
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.integration.test
-  #   networks:
-  #     vpcbr:
-  #       ipv4_address: 10.5.0.103
+  vpnclient2:
+    container_name: vpnclient2
+    privileged: true
+    command: ["-c", "(cd __test__ && php -S 0.0.0.0:80 &) && ./vpn --host=10.5.0.101 --netip=192.168.45.3/24"]
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.test
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.103
 
 networks:
   vpcbr:

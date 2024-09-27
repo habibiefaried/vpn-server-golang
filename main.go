@@ -14,8 +14,11 @@ import (
 )
 
 const (
-	MTU = 1300
+	MTU        = 1300
+	BufferSize = 2000
 )
+
+var connectionsPool map[string]net.Conn
 
 func main() {
 	var host *string = pflag.String("host", "0.0.0.0", "Which host/IP this VPN is using")
@@ -44,7 +47,7 @@ func main() {
 		var conn net.Conn
 		var err error
 		for i := 0; i < connAttempts; i++ {
-			conn, err = net.Dial("tcp", fmt.Sprintf("%v:%v", *host, *port)) // Replace with the actual server IP
+			conn, err = net.Dial("tcp", fmt.Sprintf("%v:%v", *host, *port))
 			if err == nil {
 				log.Println("Connected to server")
 				break
@@ -58,15 +61,13 @@ func main() {
 		}
 		log.Println("Connected to server")
 
-		// Handle bidirectional communication
 		IpParts := strings.Split(*netIp, "/")
 		sendTCPMessage(conn, IpParts[0])
 		go ReadIfaceAndSendTCP(ifce, conn)
 		RecvTCPAndWriteIface(conn, ifce)
 
 	} else {
-		connectionsPool := make(map[string]net.Conn)
-
+		connectionsPool = make(map[string]net.Conn)
 		// Accept client connections in a loop
 		listener, err := net.Listen("tcp", fmt.Sprintf("%v:%v", *host, *port))
 		if err != nil {
@@ -75,9 +76,9 @@ func main() {
 		log.Printf("Listening on port %v\n", *port)
 
 		go func() {
-			rp := make([]byte, MTU)
+			rp := make([]byte, BufferSize)
 			for {
-				n, err := ifce.Read(rp) // TODO: THIS MUST MOVE OUT FROM HERE IF WE WANT MULTIPLE USER
+				n, err := ifce.Read(rp)
 				if err != nil {
 					log.Printf("Error reading from TUN interface: %v", err)
 					n = 0
@@ -86,7 +87,6 @@ func main() {
 				if n > 0 {
 					packet := gopacket.NewPacket(rp[:n], layers.LayerTypeIPv4, gopacket.Default)
 
-					// Check if the packet contains an IPv4 layer
 					if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
 						ip, _ := ipLayer.(*layers.IPv4)
 

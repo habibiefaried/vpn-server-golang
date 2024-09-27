@@ -12,7 +12,7 @@ import (
 )
 
 func ReadIfaceAndSendTCP(ifce *water.Interface, conn net.Conn) {
-	rp := make([]byte, MTU)
+	rp := make([]byte, BufferSize)
 	for {
 		n, err := ifce.Read(rp)
 		if err != nil {
@@ -22,7 +22,6 @@ func ReadIfaceAndSendTCP(ifce *water.Interface, conn net.Conn) {
 
 		packet := gopacket.NewPacket(rp[:n], layers.LayerTypeIPv4, gopacket.Default)
 
-		// Check if the packet contains an IPv4 layer
 		if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
 			ip, _ := ipLayer.(*layers.IPv4)
 
@@ -43,7 +42,7 @@ func ReadIfaceAndSendTCP(ifce *water.Interface, conn net.Conn) {
 }
 
 func RecvTCPAndWriteIface(conn net.Conn, ifce *water.Interface) {
-	response := make([]byte, 1500)
+	response := make([]byte, BufferSize)
 	for {
 		n, err := conn.Read(response)
 		if err != nil {
@@ -71,8 +70,7 @@ func sendTCPMessage(conn net.Conn, message string) {
 }
 
 func recvTCPMessage(conn net.Conn) string {
-	// Read the response from the server
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, BufferSize)
 	n, err := conn.Read(buffer)
 	if err != nil {
 		fmt.Println("Error reading response:", err)

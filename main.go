@@ -6,8 +6,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"github.com/songgao/water"
 	"github.com/spf13/pflag"
 )
@@ -46,51 +44,23 @@ func main() {
 
 		ifc.DialUp(fmt.Sprintf("%v:%v", *host, *port))
 		IpParts := strings.Split(*netIp, "/")
-		ifc.SendTCPMessage(IpParts[0])
+		ifc.SendTCPMessage([]byte(IpParts[0]))
 		go ifc.ReadIfaceAndSendTCP()
 		ifc.RecvTCPAndWriteIface()
 
 	} else {
-		connectionsPool := make(map[string]IfaceConn)
 		listener, err := net.Listen("tcp", fmt.Sprintf("%v:%v", *host, *port))
 		if err != nil {
 			log.Fatalf("Failed to listen on port %v: %v", *port, err)
 		}
 		log.Printf("Listening on port %v\n", *port)
 
-		go func() {
-			rp := make([]byte, BufferSize)
-			for {
-				// continuously reading interface
-				n, err := ifce.Read(rp)
-				if err != nil {
-					log.Printf("Error reading from TUN interface: %v", err)
-					n = 0
-				}
+		PI := PooledIface{
+			Ifce: ifce,
+		}
+		PI.ConnectionsPool = make(map[string]IfaceConn)
 
-				if n > 0 {
-					packet := gopacket.NewPacket(rp[:n], layers.LayerTypeIPv4, gopacket.Default)
-
-					if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
-						ip, _ := ipLayer.(*layers.IPv4)
-
-						fmt.Printf("IPv4 packet: Src: %s, Dest: %s\n", ip.SrcIP, ip.DstIP)
-						// Send the data to the TCP server
-						// TODO: Add retry / timeout
-						if val, ok := connectionsPool[ip.DstIP.String()]; ok {
-							_, err = val.Conn.Write(rp[:n])
-							if err != nil {
-								log.Printf("Error sending packet to TCP server: %v", err)
-							}
-						} else {
-							log.Printf("Destination %v not existent\n", ip.DstIP)
-						}
-					} else {
-						fmt.Println("Not an IPv4 packet")
-					}
-				}
-			}
-		}()
+		go PI.ReadInterfaceandDistribute()
 
 		// Accept client connections in a loop
 		for {
@@ -103,15 +73,14 @@ func main() {
 
 			// Handle each client connection in a new goroutine
 			go func() {
-				defer conn.Close()
 				ifc := IfaceConn{
 					Ifce: ifce,
 					Conn: conn,
 				}
-				netIp := ifc.RecvTCPMessage()
+				netIp := string(ifc.RecvTCPMessage())
 				log.Println("Got IP from " + netIp)
 
-				connectionsPool[netIp] = ifc
+				PI.ConnectionsPool[netIp] = ifc
 
 				ifc.RecvTCPAndWriteIface()
 			}()

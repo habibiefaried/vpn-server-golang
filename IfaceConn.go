@@ -49,29 +49,20 @@ func (ifc *IfaceConn) ReadIfaceAndSendTCP() {
 		}
 
 		if n > 0 {
-			// Send the data to the TCP server
-			// TODO: Add retry or kill
-			_, err = ifc.Conn.Write(rp[:n])
-			if err != nil {
-				log.Printf("Error sending packet to TCP server: %v", err)
-			}
+			ifc.SendTCPMessage(rp[:n])
 		}
 	}
 }
 
 func (ifc *IfaceConn) RecvTCPAndWriteIface() {
-	response := make([]byte, BufferSize)
 	for {
-		n, err := ifc.Conn.Read(response)
-		if err != nil {
-			// TODO: Add retry or kill
-			n = 0
-		}
+		response := ifc.RecvTCPMessage()
+		n := len(response)
 
 		if n > 0 {
 			fmt.Printf("Received %d bytes from TCP server\n", n)
 			// Write the response back to the TUN interface
-			_, err = ifc.Ifce.Write(response[:n])
+			_, err := ifc.Ifce.Write(response)
 			if err != nil {
 				log.Printf("Error writing to TUN interface: %v", err)
 			}
@@ -79,20 +70,20 @@ func (ifc *IfaceConn) RecvTCPAndWriteIface() {
 	}
 }
 
-func (ifc *IfaceConn) SendTCPMessage(message string) {
-	_, err := ifc.Conn.Write([]byte(message))
+func (ifc *IfaceConn) SendTCPMessage(message []byte) {
+	_, err := ifc.Conn.Write(message)
 	if err != nil {
 		fmt.Println("Error sending message:", err)
 		return
 	}
 }
 
-func (ifc *IfaceConn) RecvTCPMessage() string {
+func (ifc *IfaceConn) RecvTCPMessage() []byte {
 	buffer := make([]byte, BufferSize)
+	n := 0
 	n, err := ifc.Conn.Read(buffer)
 	if err != nil {
 		fmt.Println("Error reading response:", err)
-		return ""
 	}
-	return string(buffer[:n])
+	return buffer[:n]
 }
